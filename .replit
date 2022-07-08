@@ -1,6 +1,6 @@
 compile = ["make", "-s"]
 #              n b i j  k
-run = "./main 64 8 5 45 7"
+run = "./main 4098 16 243 900 200"
 entrypoint = "main.cpp"
 hidden = ["main", "**/*.o", "**/*.d", ".ccls-cache", "Makefile"]
 

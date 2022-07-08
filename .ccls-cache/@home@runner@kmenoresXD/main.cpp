@@ -7,8 +7,8 @@
 #include <cstring>
 #include <stdlib.h>
 
-#define MAX_VAL 69
-#define PRINT_LIMIT 100
+#define MAX_VAL 4891234
+#define PRINT_LIMIT 220
 #define RANDOM_SEED 6969
 
 using std::cout;
@@ -82,13 +82,24 @@ int main( int argc, char **argv ) {
         vector<long> rand_vec = generate_array(n, w);
         print_vector_block(rand_vec, b);
         vector<vector<long>> all_m_minors = get_all_m_minors(rand_vec, b, m);
-        get_k_minors(all_m_minors, i, j, k, b, rand_vec, m);
         clock_t t;
+        t = clock();
+        auto k_menores_pro = get_k_minors(all_m_minors, i, j, k, b, rand_vec, m);
+        t = clock() - t;
+        float total_time = (float)t/CLOCKS_PER_SEC;
+
+        cout << "timeours: " << total_time << "secs" << endl;
+
         t = clock();
         auto k_menores_sort = get_k_minors(rand_vec, i, j,  k);
         t = clock() - t;
-        float total_time = (float)t/CLOCKS_PER_SEC;
+        total_time = (float)t/CLOCKS_PER_SEC;
+
         cout << "timexd: " << total_time << "secs" << endl;
+
+    
+        //cout << "timexd: " << total_time << "secs" << endl;
+        print_vector(k_menores_pro);
         cout << "solucion real: " << endl;
         print_vector(k_menores_sort);
         cout << "--------------------------------------" << endl;
@@ -238,7 +249,7 @@ vector<T> get_k_minors(vector<vector<T>> all_ms, size_t i, size_t j, size_t k, s
 
     vector<T> kmins = k_mins_from_blocks(sakura, k, v);
 
-    print_vector(kmins);
+    // print_vector(kmins);
     return kmins;
 }
 
@@ -266,6 +277,7 @@ vector<T> k_mins_from_blocks(vector<bolsa<T>> &sakura, size_t k, vector<T> &v){
                 current_val = temp_block[temp.idx];
             } 
             else{
+                //convertir
                 current_val = temp.mins[temp.idx];
             }
             if(current_val <= kmins[ii]){
