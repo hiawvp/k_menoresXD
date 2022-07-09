@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <ctime>       /* clock_t, clock, CLOCKS_PER_SEC */
 #include "include/BasicCDS.h"
@@ -6,10 +7,15 @@
 #include <algorithm>
 #include <cstring>
 #include <stdlib.h>
+#include <math.h>
 
 #define MAX_VAL 4891234
 #define PRINT_LIMIT 220
 #define RANDOM_SEED 6969
+
+#ifndef ulong
+#define ulong unsigned long
+#endif
 
 using std::cout;
 using std::endl;
@@ -23,7 +29,9 @@ using std::sort_heap;
 using std::stack;
 using std::min;
 using std::nth_element;
+using std::max_element;
 
+using namespace cds;
 
 vector<long> generate_array(size_t n, int seed);
 template<typename T>
@@ -37,7 +45,7 @@ void print_vector_block(vector<T> &v, size_t b);
 
 
 template<typename T>
-void run_count_encode(vector<T> &v, size_t i, size_t j);
+vector<T> run_count_encode(vector<T> &v);
 template<typename T>
 void run_count_decode(vector<T> &v, size_t i, size_t j);
 
@@ -52,13 +60,21 @@ vector<long> get_k_minors(vector<long> input, size_t i, size_t j, size_t k);
 template<typename T>
 vector<T> get_k_minors(vector<vector<T>> all_ms, size_t i, size_t j, size_t k, size_t b, vector<T> &v, size_t m);
 
+template<typename T>
+vector<vector<T>> compare_solutions(vector<T> &sol_a, vector<T> &sol_b);
+
+template<typename T>
+vector<ulong> succinct_encode(vector<T> &v);
+
+vector<ulong> succinct_decode(vector<ulong> &X, ulong max_size, size_t m);
 //count_last
 template<typename T>
 struct bolsa{
     size_t idx = 0;
-    vector<T> mins;
+    vector<T> mins; // [1 1] m elementos
     size_t block_start_idx = 0;
     size_t block_len = 0;
+		vector<T> encoded;
 };
 
 template<typename T>
@@ -75,9 +91,9 @@ int main( int argc, char **argv ) {
     size_t j = atoi(argv[4]);
     size_t k = atoi(argv[5]);
 
-    size_t m = 2;
+    size_t m = 6;
     // srand(RANDOM_SEED);
-    size_t w = 4;
+    size_t w = 2;
     // for(size_t w = 0; w < 10; w++){
         vector<long> rand_vec = generate_array(n, w);
         print_vector_block(rand_vec, b);
@@ -93,6 +109,7 @@ int main( int argc, char **argv ) {
         t = clock();
         auto k_menores_sort = get_k_minors(rand_vec, i, j,  k);
         t = clock() - t;
+	
         total_time = (float)t/CLOCKS_PER_SEC;
 
         cout << "timexd: " << total_time << "secs" << endl;
@@ -187,7 +204,7 @@ vector<T> find_m_minors(vector<T> &block, size_t m){
         }
         // cout << "heap size: " << m_minors_heap.size() << endl;
     }
-    sort_heap(m_minors_heap.rbegin(), m_minors_heap.rend());
+    sort_heap(m_minors_heap.begin(), m_minors_heap.end());
     return m_minors_heap;
 }
 
@@ -232,12 +249,30 @@ vector<T> get_k_minors(vector<vector<T>> all_ms, size_t i, size_t j, size_t k, s
     for (size_t w = i; w < (i + prefix_len); w++ ){
         first.push_back(v[w]);
         }
+	
     for (size_t w = j; w > ( j - suffix_len); w-- ){
         last.push_back(v[w]);
         }
 
     vector<T> aaa = find_m_minors(first, min(m, first.size()));
+
+    cout<<"Codigo nuevo\n";
+
+		auto gap_coded = run_count_encode(v);
+		auto succed = succinct_encode(gap_coded);
+	
+    auto _max = max_element(gap_coded.begin(),gap_coded.end());
+    int max_elem = *_max;
+	
+    ulong max_size = ceil(log2(max_elem));
+    vector<ulong> decoded = succinct_decode(succed, max_size, m);
+
+	
+    cout<<"end codigo nuevo\n";
+
+    //                        idx [0..m], 
     sakura.push_back(bolsa<T>{0, aaa, i, prefix_len});	
+
 
     for(size_t l = first_block_idx; l <= last_block_idx; l++){
         sakura.push_back(bolsa<T>{0, all_ms[l], b*l, b});
@@ -250,6 +285,8 @@ vector<T> get_k_minors(vector<vector<T>> all_ms, size_t i, size_t j, size_t k, s
     vector<T> kmins = k_mins_from_blocks(sakura, k, v);
 
     // print_vector(kmins);
+		
+	
     return kmins;
 }
 
@@ -277,10 +314,9 @@ vector<T> k_mins_from_blocks(vector<bolsa<T>> &sakura, size_t k, vector<T> &v){
                 current_val = temp_block[temp.idx];
             } 
             else{
-                //convertir
-                current_val = temp.mins[temp.idx];
+                if (temp.idx < temp.mins.size()) current_val = temp.mins[temp.idx];
             }
-            if(current_val <= kmins[ii]){
+            if(current_val < kmins[ii]){
                 // cout << kmins[ii] << " XD, ii: " << ii <<  endl;
                 kmins[ii] = current_val;
                 current_min_idx = l;
@@ -292,3 +328,64 @@ vector<T> k_mins_from_blocks(vector<bolsa<T>> &sakura, size_t k, vector<T> &v){
 
     return kmins;
 }
+
+template<typename T>
+void compare_solutions(vector<T> &sol_a, vector<T> &sol_b, size_t k){
+   if(sol_a.size() != k){
+       cout << "sol_a no tiene k elementos" << endl;
+       return;
+   } 
+   if(sol_b.size() != k){
+       cout << "sol_a no tiene k elementos" << endl;
+       return;
+   } 
+}
+
+
+template<typename T>
+vector<T> run_count_encode(vector<T> &v){
+    vector<T> gapscoding;
+    auto sum = v[0];
+    gapscoding.push_back(sum);
+    for (size_t i = 1; i < v.size(); i++){
+        auto temp = v[i] - sum;
+        gapscoding.push_back(temp);
+        sum += temp;
+    }
+    return gapscoding;
+}
+
+
+    
+////aca 
+template<typename T>
+vector<ulong> succinct_encode(vector<T> &v){
+	ulong i, j;
+	auto max = max_element(v.begin(), v.end());
+	int max_elem = *max;
+	ulong max_size = ceil(log2(max_elem));
+	size_t nWX = (v.size()*max_size)/(sizeof(ulong)*8);
+    if ((v.size()*max_size)%(sizeof(ulong)*8)>0) nWX++;
+	vector<ulong> X(nWX);
+    cout << v[0] << endl;
+	for (i=j=0; i<v.size(); i++, j+=max_size){
+		setNumV64(X, j, max_size, (ulong)v[i]);
+	}
+    cout << "print_vector encode: ";
+    print_vector(X);
+	return X;
+    cout << "end succintXD" << endl;
+} 
+
+////aca 
+vector<ulong> succinct_decode(vector<ulong> &X, ulong max_size, size_t m){
+	ulong i, j;
+	vector<ulong> succ_decoded;
+    for (i=j=0; i<m; i++, j+=max_size){
+        auto num = getNumV64(X, j, max_size);
+        succ_decoded.push_back(num);
+		}
+	
+    cout << "end succint decodeXD" << endl;
+return succ_decoded;
+} 

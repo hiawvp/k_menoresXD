@@ -9,6 +9,9 @@
 #define BASIC_DRF_H_
 
 #include <stdio.h>
+#include <vector>
+
+using std::vector;
 
 namespace cds {
 	#ifndef uchar // 1 byte
@@ -46,7 +49,9 @@ namespace cds {
 	// set the ulong x as a bitstring sequence in *A. In the range of bits [ini, .. ini+len-1] of *A. We set len bits from x
 	void setNum64(ulong *A, ulong ini, uint len, ulong x);
 
+	void setNumV64(vector<ulong> &A, ulong ini, ulong len, ulong x); 
 	// return (in a unsigned integer) the number in A from bits of position 'ini' to 'ini+len-1'
+	ulong getNumV64(vector<ulong> A, ulong ini, uint len);
 	ulong getNum64(ulong *A, ulong ini, uint len);
 
 } /* namespace cds */
