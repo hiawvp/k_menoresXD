@@ -57,7 +57,7 @@ namespace cds {
 
 		return result;
 	}
-	void setNumV64(vector<ulong> &A, ulong ini, ulong len, ulong x) {
+	void setNumV64(vector<ulong> &A, ulong ini, uint len, ulong x) {
 		ulong i=ini>>BW64, j=ini-(i<<BW64);
 		if ((j+len)>W64){ // its spans in two words
 			ulong myMask = ~(~0ul >> j);
